@@ -118,7 +118,7 @@ ExternalProject_Add(ffmpeg
         --extra-cflags='-Wno-error=int-conversion'
         "--extra-libs='${ffmpeg_extra_libs}'" # -lstdc++ / -lc++ needs by libjxl and shaderc
     BUILD_COMMAND ${MAKE}
-    INSTALL_COMMAND ${MAKE} install
+    INSTALL_COMMAND ${MAKE_INSTALL} install
     LOG_DOWNLOAD 1 LOG_UPDATE 1 LOG_CONFIGURE 1 LOG_BUILD 1 LOG_INSTALL 1
 )
 
