@@ -7,7 +7,9 @@ ExternalProject_Add(libopenmpt
     URL https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-0.7.12+release.autotools.tar.gz
     URL_HASH SHA256=79AB3CE3672601E525B5CC944F026C80C03032F37D39CAA84C8CA3FDD75E0C98
     DOWNLOAD_DIR ${SOURCE_LOCATION}
-    CONFIGURE_COMMAND ${EXEC} autoreconf -fi && CONF=1 <SOURCE_DIR>/configure
+    CONFIGURE_COMMAND ${EXEC} cd <SOURCE_DIR> && unset CC CXX && autoreconf -fi && CONF=1 ./configure
+        CC=${TARGET_ARCH}-gcc
+        CXX=${TARGET_ARCH}-g++
         --host=${TARGET_ARCH}
         --prefix=${MINGW_INSTALL_PREFIX}
         --disable-shared

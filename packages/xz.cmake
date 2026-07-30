@@ -4,7 +4,9 @@ ExternalProject_Add(xz
     GIT_CLONE_FLAGS "--filter=tree:0"
     UPDATE_COMMAND ""
     GIT_RESET 3d078b52adbff566ccfc51067dfbf742ecf3ef86 # v5.8.2
-    CONFIGURE_COMMAND ${EXEC} CONF=1 <SOURCE_DIR>/configure
+    CONFIGURE_COMMAND ${EXEC} cd <SOURCE_DIR> && unset CC CXX && CONF=1 autoreconf -fi && ./configure
+        CC=${TARGET_ARCH}-gcc
+        CXX=${TARGET_ARCH}-g++
         --host=${TARGET_ARCH}
         --prefix=${MINGW_INSTALL_PREFIX}
         --disable-shared

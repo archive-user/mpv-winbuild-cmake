@@ -23,7 +23,7 @@ ExternalProject_Add(mingw-w64-crt
 ExternalProject_Add_Step(mingw-w64-crt autoreconf
     DEPENDEES download update patch
     DEPENDERS configure
-    COMMAND ${EXEC} autoreconf -fi
+    COMMAND ${EXEC} unset CC CXX && autoreconf -fi
     WORKING_DIRECTORY <SOURCE_DIR>/mingw-w64-crt
     LOG 1
 )
