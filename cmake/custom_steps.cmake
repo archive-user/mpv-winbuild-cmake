@@ -24,7 +24,8 @@ function(cleanup _name _last_step)
                                  COMMAND ${stamp_dir}/reset_head.sh
                                  COMMAND bash -c "git -C <SOURCE_DIR> restore .")
         set(COMMAND_POSTREMOVE COMMAND bash -c "git -C <SOURCE_DIR> am --abort 2> /dev/null || true"
-                               COMMAND bash -c "git -C <SOURCE_DIR> restore . 2> /dev/null || true")
+                               COMMAND bash -c "git -C <SOURCE_DIR> restore . 2> /dev/null || true"
+                               COMMAND ${EXEC} rm -f <LOG_DIR>/${_name}-configure <LOG_DIR>/${_name}-build)
     endif()
 
     # <STAMP_DIR> doesn't resolve into full path, so <LOG_DIR> is used instead since its same folder.
