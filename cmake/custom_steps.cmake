@@ -112,18 +112,24 @@ fi")
 file(CHMOD ${stamp_dir}/reset_head.sh 
 PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
+file(WRITE ${stamp_dir}/force_update.sh
+"#!/bin/bash
+if [ -d \"${source_dir}\" ]; then
+    cd \"${source_dir}\"
+    git am --abort 2>/dev/null || true
+    git fetch --filter=tree:0 --no-recurse-submodules || true
+    \"${stamp_dir}/reset_head.sh\"
+else
+    echo 'Source directory for ${_name} does not exist, skipping force-update'
+fi")
+file(CHMOD ${stamp_dir}/force_update.sh
+PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+
     ExternalProject_Add_Step(${_name} force-update
         ALWAYS TRUE
         EXCLUDE_FROM_MAIN TRUE
         INDEPENDENT TRUE
-        COMMAND bash -c "if [ -d <SOURCE_DIR> ]; then \
-            cd <SOURCE_DIR> && \
-            (git am --abort 2> /dev/null || true) && \
-            (git fetch --filter=tree:0 --no-recurse-submodules || true) && \
-            ${stamp_dir}/reset_head.sh; \
-        else \
-            echo 'Source directory for ${_name} does not exist, skipping force-update'; \
-        fi"
+        COMMAND ${stamp_dir}/force_update.sh
     )
     ExternalProject_Add_StepTargets(${_name} force-update)
 
