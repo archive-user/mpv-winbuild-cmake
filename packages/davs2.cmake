@@ -8,13 +8,14 @@ ExternalProject_Add(davs2
     GIT_CLONE_FLAGS "--filter=tree:0"
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ${EXEC} cd <SOURCE_DIR>/build/linux && CONF=1 ./configure
+        CC=${TARGET_ARCH}-gcc
         --host=${TARGET_ARCH}
-        --cross-prefix=${TARGET_CPU}-w64-mingw32-
+        --cross-prefix=${TARGET_ARCH}-
         --prefix=${MINGW_INSTALL_PREFIX}
         --disable-cli
         ${disable_asm}
     BUILD_COMMAND ${MAKE} -C <SOURCE_DIR>/build/linux
-    INSTALL_COMMAND ${MAKE} -C <SOURCE_DIR>/build/linux install
+    INSTALL_COMMAND ${MAKE_INSTALL} -C <SOURCE_DIR>/build/linux install
     BUILD_IN_SOURCE 1
     LOG_DOWNLOAD 1 LOG_UPDATE 1 LOG_CONFIGURE 1 LOG_BUILD 1 LOG_INSTALL 1
 )
