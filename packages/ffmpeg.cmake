@@ -100,7 +100,6 @@ ExternalProject_Add(ffmpeg
         --enable-libvpl
         --enable-libjxl
         --enable-libplacebo
-        --enable-libshaderc
         --enable-libzvbi
         --enable-libaribcaption
         ${ffmpeg_cuda}
@@ -116,7 +115,7 @@ ExternalProject_Add(ffmpeg
         --disable-decoder=libaom_av1
         ${ffmpeg_lto}
         --extra-cflags='-Wno-error=int-conversion'
-        "--extra-libs='${ffmpeg_extra_libs}'" # -lstdc++ / -lc++ needs by libjxl and shaderc
+        "--extra-libs='${ffmpeg_extra_libs}'" # -lstdc++ / -lc++ needs by libjxl
     BUILD_COMMAND ${MAKE}
     INSTALL_COMMAND ${MAKE_INSTALL} install
     LOG_DOWNLOAD 1 LOG_UPDATE 1 LOG_CONFIGURE 1 LOG_BUILD 1 LOG_INSTALL 1
