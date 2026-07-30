@@ -95,6 +95,13 @@ jobs:
 
       - name: Configuring CMake & Downloading source
         run: |
+          # Remove broken source directories from previous failed clones
+          for d in src_packages/*/; do
+            [ -d "$d" ] || continue
+            if [ -d "$d/.git" ] && ! git -C "$d" rev-parse --is-inside-work-tree &>/dev/null; then
+              rm -rf "$d"
+            fi
+          done
           cmake -DTARGET_ARCH=${{ env.arch }}-w64-mingw32 -DCOMPILER_TOOLCHAIN=clang ${{ env.x86_64_v3_ARCH }} -DCMAKE_INSTALL_PREFIX=$PWD/clang_root -DMINGW_INSTALL_PREFIX=$PWD/build_$BIT/$BIT-w64-mingw32 -DSINGLE_SOURCE_LOCATION=$PWD/src_packages -DRUSTUP_LOCATION=$PWD/clang_root/install_rustup -DENABLE_CCACHE=ON -DCLANG_PACKAGES_LTO=ON -G Ninja --fresh -B build_$BIT -S $PWD
           ninja -C build_$BIT download || true
 

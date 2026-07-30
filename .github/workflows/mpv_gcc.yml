@@ -96,6 +96,13 @@ jobs:
 
       - name: Downloading source
         run: |
+          # Remove broken source directories from previous failed clones
+          for d in src_packages/*/; do
+            [ -d "$d" ] || continue
+            if [ -d "$d/.git" ] && ! git -C "$d" rev-parse --is-inside-work-tree &>/dev/null; then
+              rm -rf "$d"
+            fi
+          done
           cmake -DTARGET_ARCH=${{ env.arch }}-w64-mingw32 ${{ env.gcc_arch }} -DSINGLE_SOURCE_LOCATION=$PWD/src_packages -DRUSTUP_LOCATION=$PWD/clang_root/install_rustup -DENABLE_CCACHE=ON --fresh -G Ninja -B build_$BIT -S $PWD
           ninja -C build_$BIT download || true
 
