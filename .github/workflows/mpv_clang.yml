@@ -98,8 +98,27 @@ jobs:
           # Remove broken source directories from previous failed clones
           for d in src_packages/*/; do
             [ -d "$d" ] || continue
-            if [ -d "$d/.git" ] && ! git -C "$d" rev-parse --is-inside-work-tree &>/dev/null; then
+            valid=true
+            if [ -d "$d/.git" ]; then
+              git -C "$d" rev-parse --is-inside-work-tree &>/dev/null || valid=false
+              git -C "$d" rev-parse HEAD &>/dev/null || valid=false
+            else
+              valid=false
+            fi
+            if [ "$valid" = false ]; then
+              echo "Removing broken source directory: $d"
               rm -rf "$d"
+            fi
+          done
+          # Remove install stamps for packages with empty build directories
+          for stamp_dir in build_$BIT/packages/*-prefix/src/*-stamp/; do
+            [ -d "$stamp_dir" ] || continue
+            pkg_name=$(basename "$stamp_dir" -stamp)
+            build_dir=$(dirname "$stamp_dir")/${pkg_name}-build
+            install_stamp="$stamp_dir/$pkg_name-install"
+            if [ -f "$install_stamp" ] && [ -d "$build_dir" ] && [ -z "$(ls -A "$build_dir" 2>/dev/null)" ]; then
+              echo "Build dir empty but install stamp exists, removing stamps for $pkg_name"
+              find "$stamp_dir" -type f ! -iname '*.cmake' -size 0c -delete
             fi
           done
           cmake -DTARGET_ARCH=${{ env.arch }}-w64-mingw32 -DCOMPILER_TOOLCHAIN=clang ${{ env.x86_64_v3_ARCH }} -DCMAKE_INSTALL_PREFIX=$PWD/clang_root -DMINGW_INSTALL_PREFIX=$PWD/build_$BIT/$BIT-w64-mingw32 -DSINGLE_SOURCE_LOCATION=$PWD/src_packages -DRUSTUP_LOCATION=$PWD/clang_root/install_rustup -DENABLE_CCACHE=ON -DCLANG_PACKAGES_LTO=ON -G Ninja --fresh -B build_$BIT -S $PWD
