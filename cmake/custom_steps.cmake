@@ -23,6 +23,8 @@ function(cleanup _name _last_step)
         set(COMMAND_FORCE_UPDATE COMMAND bash -c "git -C <SOURCE_DIR> am --abort 2> /dev/null || true"
                                  COMMAND ${stamp_dir}/reset_head.sh
                                  COMMAND bash -c "git -C <SOURCE_DIR> restore .")
+        set(COMMAND_POSTREMOVE COMMAND bash -c "git -C <SOURCE_DIR> am --abort 2> /dev/null || true"
+                               COMMAND bash -c "git -C <SOURCE_DIR> restore . 2> /dev/null || true")
     endif()
 
     # <STAMP_DIR> doesn't resolve into full path, so <LOG_DIR> is used instead since its same folder.
@@ -49,7 +51,7 @@ function(cleanup _name _last_step)
     ExternalProject_Add_Step(${_name} postremovebuild
         DEPENDEES ${_last_step}
         COMMAND ${EXEC} ${remove_cmd}
-        ${COMMAND_FORCE_UPDATE}
+        ${COMMAND_POSTREMOVE}
         LOG 1
         COMMENT "Deleting build directory of ${_name} package after install"
     )
@@ -117,7 +119,7 @@ file(WRITE ${stamp_dir}/force_update.sh
 if [ -d \"${source_dir}\" ]; then
     cd \"${source_dir}\"
     git am --abort 2>/dev/null || true
-    git fetch --filter=tree:0 --no-recurse-submodules || true
+    git fetch --no-recurse-submodules || true
     \"${stamp_dir}/reset_head.sh\"
 else
     echo 'Source directory for ${_name} does not exist, skipping force-update'
