@@ -11,7 +11,9 @@ ExternalProject_Add(lame
     GIT_CLONE_FLAGS "--filter=tree:0"
     UPDATE_COMMAND ""
     PATCH_COMMAND chmod 755 ${DEBPATCH} && ${DEBPATCH}
-    CONFIGURE_COMMAND ${EXEC} autoupdate -f && CONF=1 <SOURCE_DIR>/configure
+    CONFIGURE_COMMAND ${EXEC} cd <SOURCE_DIR> && unset CC CXX && autoupdate -f && CONF=1 ./configure
+        CC=${TARGET_ARCH}-gcc
+        CXX=${TARGET_ARCH}-g++
         --host=${TARGET_ARCH}
         --prefix=${MINGW_INSTALL_PREFIX}
         --disable-shared
