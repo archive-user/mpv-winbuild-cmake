@@ -11,7 +11,7 @@ ExternalProject_Add(openssl
     UPDATE_COMMAND ""
     PATCH_COMMAND ${EXEC} git am --3way ${CMAKE_CURRENT_SOURCE_DIR}/openssl-*.patch
     CONFIGURE_COMMAND ${EXEC} mkdir -p apps/include
-    COMMAND ${EXEC} CONF=1 <SOURCE_DIR>/Configure
+    COMMAND ${EXEC} unset CC CXX && CONF=1 <SOURCE_DIR>/Configure
         --cross-compile-prefix=${TARGET_ARCH}-
         --prefix=${MINGW_INSTALL_PREFIX}
         --libdir=lib
