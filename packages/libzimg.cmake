@@ -7,7 +7,9 @@ ExternalProject_Add(libzimg
     GIT_CLONE_FLAGS "--filter=tree:0"
     GIT_SUBMODULES ""
     UPDATE_COMMAND ""
-    CONFIGURE_COMMAND ${EXEC} rm -rf <SOURCE_DIR>/graphengine && ln -sf ${src_graphengine} <SOURCE_DIR>/graphengine && git -C <SOURCE_DIR> clean -dfx -e graphengine && sed -i "s/Windows.h/windows.h/g" <SOURCE_DIR>/src/zimg/common/arm/cpuinfo_arm.cpp && NOCONFIGURE=1 <SOURCE_DIR>/autogen.sh && CONF=1 <SOURCE_DIR>/configure
+    CONFIGURE_COMMAND ${EXEC} cd <SOURCE_DIR> && rm -rf graphengine && ln -sf ${src_graphengine} graphengine && git clean -dfx -e graphengine && sed -i "s/Windows.h/windows.h/g" src/zimg/common/arm/cpuinfo_arm.cpp && unset CC CXX && NOCONFIGURE=1 ./autogen.sh && CONF=1 ./configure
+        CC=${TARGET_ARCH}-gcc
+        CXX=${TARGET_ARCH}-g++
         --host=${TARGET_ARCH}
         --prefix=${MINGW_INSTALL_PREFIX}
         --disable-shared
