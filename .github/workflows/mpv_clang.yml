@@ -110,6 +110,14 @@ jobs:
               rm -rf "$d"
             fi
           done
+          # Remove nvcodec-headers if it still points to the old videolan URL
+          if [ -d "src_packages/nvcodec-headers/.git" ]; then
+            origin=$(git -C src_packages/nvcodec-headers remote get-url origin 2>/dev/null || true)
+            if [[ "$origin" == *videolan* ]]; then
+              echo "Removing nvcodec-headers with old videolan origin URL"
+              rm -rf src_packages/nvcodec-headers
+            fi
+          fi
           # Remove install stamps for packages with empty build directories
           for stamp_dir in build_$BIT/packages/*-prefix/src/*-stamp/; do
             [ -d "$stamp_dir" ] || continue
