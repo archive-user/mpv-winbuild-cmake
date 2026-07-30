@@ -4,11 +4,12 @@ ExternalProject_Add(libbs2b
     GIT_CLONE_FLAGS "--filter=tree:0"
     PATCH_COMMAND ${EXEC} git am --3way ${CMAKE_CURRENT_SOURCE_DIR}/libbs2b-*.patch
     UPDATE_COMMAND ""
-    CONFIGURE_COMMAND ${EXEC} NOCONFIGURE=1 <SOURCE_DIR>/autogen.sh && CONF=1 <SOURCE_DIR>/configure
+    CONFIGURE_COMMAND ${EXEC} git -C <SOURCE_DIR> clean -dfx && NOCONFIGURE=1 <SOURCE_DIR>/autogen.sh && CONF=1 <SOURCE_DIR>/configure
         --host=${TARGET_ARCH}
         --prefix=${MINGW_INSTALL_PREFIX}
         --enable-static
         --disable-shared
+        --disable-dependency-tracking
     BUILD_COMMAND ${MAKE}
     INSTALL_COMMAND ${MAKE} install
     BUILD_IN_SOURCE 1

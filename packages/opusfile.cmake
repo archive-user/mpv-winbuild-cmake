@@ -5,13 +5,14 @@ ExternalProject_Add(opusfile
     SOURCE_DIR ${SOURCE_LOCATION}
     GIT_CLONE_FLAGS "--filter=tree:0"
     UPDATE_COMMAND ""
-    CONFIGURE_COMMAND ${EXEC} NOCONFIGURE=1 <SOURCE_DIR>/autogen.sh && CONF=1 <SOURCE_DIR>/configure
+    CONFIGURE_COMMAND ${EXEC} git -C <SOURCE_DIR> clean -dfx && NOCONFIGURE=1 <SOURCE_DIR>/autogen.sh && CONF=1 <SOURCE_DIR>/configure
         --host=${TARGET_ARCH}
         --prefix=${MINGW_INSTALL_PREFIX}
         --disable-shared
         --disable-doc
         --disable-examples
         --disable-http
+        --disable-dependency-tracking
     BUILD_COMMAND ${MAKE}
     INSTALL_COMMAND ${MAKE} install
     BUILD_IN_SOURCE 1
