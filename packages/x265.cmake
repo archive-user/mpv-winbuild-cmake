@@ -179,22 +179,11 @@ function(delete_dir)
     endforeach()
 endfunction()
 
-# x265 cmake build doesn't properly generate x265.pc during cross-compilation
-# Generate and install a pkg-config file so ffmpeg can find it
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/x265.pc.in ${CMAKE_CURRENT_BINARY_DIR}/x265.pc @ONLY)
-
-ExternalProject_Add_Step(${ffmpeg_x265} install-pc
-    DEPENDEES install
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/x265.pc ${MINGW_INSTALL_PREFIX}/lib/pkgconfig/x265.pc
-)
-
 force_rebuild_git(x265)
-cleanup(x265 install-pc)
 cleanup(x265 install)
 cleanup(x265-10bit-lib install)
 cleanup(x265-12bit-lib install)
 cleanup(x265-10bit install)
 cleanup(x265-8+10bit install)
 cleanup(x265-8+10+12bit install)
-cleanup(${ffmpeg_x265} install-pc)
 delete_dir(x265-10bit-lib x265-12bit-lib x265-10bit x265-8+10bit x265-8+10+12bit)
