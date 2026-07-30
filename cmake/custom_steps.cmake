@@ -95,8 +95,12 @@ function(force_rebuild_git _name)
 file(WRITE ${stamp_dir}/reset_head.sh
 "#!/bin/bash
 set -e
+if [[ ! -d \"${source_dir}\" ]]; then
+    echo \"Source directory ${source_dir} does not exist, skipping force-update for ${_name}\"
+    exit 0
+fi
 if [[ ! -f \"${stamp_dir}/${_name}-patch\"  || \"${stamp_dir}/${_name}-download\" -nt \"${stamp_dir}/${_name}-patch\" || ! -f \"${stamp_dir}/HEAD\" || \"$(cat ${stamp_dir}/HEAD)\" != \"$(git -C ${source_dir} rev-parse @{u})\" ]]; then
-    git -C ${source_dir} reset --hard ${reset} -q
+    git -C ${source_dir} reset --hard ${reset} -q || { git -C ${source_dir} reset --hard -q; find \"${stamp_dir}\" -type f ! -iname '*.cmake' -size 0c -delete; echo \"Removing ${_name} stamp files (pinned hash not found).\"; git -C ${source_dir} rev-parse HEAD > ${stamp_dir}/HEAD; }
     if [[ -z \"${git_reset}\" ]]; then
         find \"${stamp_dir}\" -type f  ! -iname '*.cmake' -size 0c -delete
         echo \"Removing ${_name} stamp files.\"
