@@ -17,7 +17,7 @@ ExternalProject_Add(lame
         --disable-shared
         --disable-frontend
     BUILD_COMMAND ${MAKE} ${lame_force_msse}
-    INSTALL_COMMAND ${MAKE} install
+    INSTALL_COMMAND ${MAKE_INSTALL} install
     BUILD_IN_SOURCE 1
     LOG_DOWNLOAD 1 LOG_UPDATE 1 LOG_CONFIGURE 1 LOG_BUILD 1 LOG_INSTALL 1
 )
