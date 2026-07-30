@@ -8,7 +8,7 @@ ExternalProject_Add(libzimg
     GIT_SUBMODULES ""
     PATCH_COMMAND ${EXEC} sed -i "s/Windows.h/windows.h/g" src/zimg/common/arm/cpuinfo_arm.cpp
     UPDATE_COMMAND ""
-    CONFIGURE_COMMAND ${EXEC} rm -rf <SOURCE_DIR>/graphengine && ln -sf ${src_graphengine} <SOURCE_DIR>/graphengine && rm -f <SOURCE_DIR>/Makefile <SOURCE_DIR>/config.status <SOURCE_DIR>/config.log && find <SOURCE_DIR> -name .deps -type d -exec rm -rf {} + 2>/dev/null; NOCONFIGURE=1 <SOURCE_DIR>/autogen.sh && CONF=1 <SOURCE_DIR>/configure
+    CONFIGURE_COMMAND ${EXEC} rm -rf <SOURCE_DIR>/graphengine && ln -sf ${src_graphengine} <SOURCE_DIR>/graphengine && git -C <SOURCE_DIR> clean -dfx -e graphengine && NOCONFIGURE=1 <SOURCE_DIR>/autogen.sh && CONF=1 <SOURCE_DIR>/configure
         --host=${TARGET_ARCH}
         --prefix=${MINGW_INSTALL_PREFIX}
         --disable-shared
