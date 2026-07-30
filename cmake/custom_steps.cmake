@@ -116,10 +116,14 @@ PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_
         ALWAYS TRUE
         EXCLUDE_FROM_MAIN TRUE
         INDEPENDENT TRUE
-        WORKING_DIRECTORY <SOURCE_DIR>
-        COMMAND bash -c "git am --abort 2> /dev/null || true"
-        COMMAND bash -c "git fetch --filter=tree:0 --no-recurse-submodules || true"
-        COMMAND ${stamp_dir}/reset_head.sh
+        COMMAND bash -c "if [ -d <SOURCE_DIR> ]; then \
+            cd <SOURCE_DIR> && \
+            (git am --abort 2> /dev/null || true) && \
+            (git fetch --filter=tree:0 --no-recurse-submodules || true) && \
+            ${stamp_dir}/reset_head.sh; \
+        else \
+            echo 'Source directory for ${_name} does not exist, skipping force-update'; \
+        fi"
     )
     ExternalProject_Add_StepTargets(${_name} force-update)
 
