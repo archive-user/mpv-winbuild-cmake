@@ -44,7 +44,6 @@ ExternalProject_Add(ffmpeg
         ${ffmpeg_uavs3d}
         ${ffmpeg_davs2}
         rubberband
-        libva
         openal-soft
     GIT_REPOSITORY https://github.com/FFmpeg/FFmpeg.git
     SOURCE_DIR ${SOURCE_LOCATION}
@@ -109,7 +108,6 @@ ExternalProject_Add(ffmpeg
         --disable-doc
         --disable-ffplay
         --disable-ffprobe
-        --enable-vaapi
         --disable-vdpau
         --disable-videotoolbox
         --disable-decoder=libaom_av1
