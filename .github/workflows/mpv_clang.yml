@@ -9,7 +9,13 @@ on:
       command:
         description: 'Run custom command before building'
         required: false
+        default: 'ninja -C build_$BIT mpv-fullclean'
         type: string
+      sourceforge:
+        description: 'Upload to Sourceforge'
+        required: false
+        default: false
+        type: boolean
       github_release:
         description: 'Upload to Github release'
         required: false
@@ -36,6 +42,7 @@ jobs:
       image: docker://ghcr.io/shinchiro/archlinux:latest
     outputs:
       mpv_ver: ${{ steps.build_mpv_step.outputs.mpv_ver }}
+      git_updates: ${{ steps.build_mpv_step.outputs.git_updates }}
     steps:
       - name: Init variable
         run: |
@@ -61,6 +68,8 @@ jobs:
           git config --global --add safe.directory $PWD
 
       - uses: actions/checkout@main
+        with:
+          ref: ${{ github.ref_name }}
 
       - name: Loading clang sysroot cache
         uses: actions/cache/restore@main
@@ -90,54 +99,29 @@ jobs:
 
       - name: Running custom command
         if: ${{ github.event.inputs.command != '' }}
-        continue-on-error: true
+        continue-on-error: false
         run: ${{ github.event.inputs.command }}
+
+      - name: Upgrading meson
+        run: pip install --upgrade --break-system-packages meson
 
       - name: Configuring CMake & Downloading source
         run: |
-          # Remove broken source directories from previous failed clones
-          for d in src_packages/*/; do
-            [ -d "$d" ] || continue
-            valid=true
-            if [ -d "$d/.git" ]; then
-              git -C "$d" rev-parse --is-inside-work-tree &>/dev/null || valid=false
-              git -C "$d" rev-parse HEAD &>/dev/null || valid=false
-            else
-              valid=false
-            fi
-            if [ "$valid" = false ]; then
-              echo "Removing broken source directory: $d"
-              rm -rf "$d"
-            fi
-          done
-          # Remove nvcodec-headers if it still points to the old videolan URL
-          if [ -d "src_packages/nvcodec-headers/.git" ]; then
-            origin=$(git -C src_packages/nvcodec-headers remote get-url origin 2>/dev/null || true)
-            if [[ "$origin" == *videolan* ]]; then
-              echo "Removing nvcodec-headers with old videolan origin URL"
-              rm -rf src_packages/nvcodec-headers
-            fi
-          fi
-          # Remove install stamps for packages with empty build directories
-          for stamp_dir in build_$BIT/packages/*-prefix/src/*-stamp/; do
-            [ -d "$stamp_dir" ] || continue
-            pkg_name=$(basename "$stamp_dir" -stamp)
-            build_dir=$(dirname "$stamp_dir")/${pkg_name}-build
-            install_stamp="$stamp_dir/$pkg_name-install"
-            if [ -f "$install_stamp" ] && [ -d "$build_dir" ] && [ -z "$(ls -A "$build_dir" 2>/dev/null)" ]; then
-              echo "Build dir empty but install stamp exists, removing stamps for $pkg_name"
-              find "$stamp_dir" -type f ! -iname '*.cmake' -size 0c -delete
-            fi
-          done
           cmake -DTARGET_ARCH=${{ env.arch }}-w64-mingw32 -DCOMPILER_TOOLCHAIN=clang ${{ env.x86_64_v3_ARCH }} -DCMAKE_INSTALL_PREFIX=$PWD/clang_root -DMINGW_INSTALL_PREFIX=$PWD/build_$BIT/$BIT-w64-mingw32 -DSINGLE_SOURCE_LOCATION=$PWD/src_packages -DRUSTUP_LOCATION=$PWD/clang_root/install_rustup -DENABLE_CCACHE=ON -DCLANG_PACKAGES_LTO=ON -G Ninja --fresh -B build_$BIT -S $PWD
-          ninja -C build_$BIT download || true
+          ninja -C build_$BIT download
 
       - name: Building mpv
         id: build_mpv_step
         env:
           MPV_TARBALL: ${{ github.event.inputs.mpv_tarball }}
         run: |
-          ninja -C build_$BIT update
+          ninja -C build_$BIT update 2>&1 | tee /tmp/update_log.txt
+          git_updates=$(python3 parse_git_updates.py /tmp/update_log.txt)
+          if [[ $BIT == "x86_64_v3" ]]; then
+            echo "git_updates<<DELIMITER" >> $GITHUB_OUTPUT
+            echo "$git_updates" >> $GITHUB_OUTPUT
+            echo "DELIMITER" >> $GITHUB_OUTPUT
+          fi
           $MPV_TARBALL && ninja -C build_$BIT mpv-release || ninja -C build_$BIT mpv
           $MPV_TARBALL && echo "mpv_ver=$(cat build_$BIT/packages/mpv-release-prefix/VERSION)" >> $GITHUB_OUTPUT || echo "mpv_ver=UNKNOWN" >> $GITHUB_OUTPUT
 
@@ -243,7 +227,7 @@ jobs:
 
       - uses: actions/checkout@main
         with:
-          ref: master
+          ref: ${{ github.ref_name }}
 
       - name: Loading release_i686 cache
         uses: actions/cache/restore@main
@@ -275,12 +259,120 @@ jobs:
           mv release_i686/* release_x86_64/* release_x86_64_v3/* release_aarch64/* release
           du -ah release/*
 
+      - name: Uploading packages to Sourceforge
+        id: upload_packages_sf
+        if: ${{ github.event.inputs.sourceforge == 'true' }}
+        continue-on-error: true
+        env:
+          MPV_VER: ${{ needs.build_mpv.outputs.mpv_ver }}
+        run: |
+          mkdir -p /root/.ssh/
+          echo "${{ secrets.SF_PRIVATE_KEY }}" > sf_key
+          pubkey=$(cat <<END
+          frs.sourceforge.net ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOQD35Ujalhh+JJkPvMckDlhu4dS7WH6NsOJ15iGCJLC
+          END
+          )
+          echo $pubkey > /root/.ssh/known_hosts
+          chmod 400 sf_key
+          chmod -R 700 /root
+          sftp -i sf_key shinchiro@frs.sourceforge.net:/home/frs/project/mpv-player-windows <<END
+          put release/mpv-dev*           libmpv
+          put release/mpv-i686*          32bit
+          put release/mpv-x86_64-[!v3]*  64bit
+          put release/mpv-x86_64-v3*     64bit-v3
+          put release/mpv-$MPV_VER*      release
+          END
+
       - name: Uploading packages to Github release
-        uses: softprops/action-gh-release@v1
+        id: upload_packages_gh
         if: ${{ github.event.inputs.github_release == 'true' && github.event.inputs.mpv_tarball == 'false' }}
-        with:
-          draft: true
-          prerelease: false
-          tag_name: "vnext"
-          files: |
-            release/*
+        continue-on-error: true
+        env:
+          GIT_UPDATES: ${{ needs.build_mpv.outputs.git_updates }}
+        run: |
+          short_date=$(date "+%Y%m%d")
+          updates_section=""
+          [[ -n "$GIT_UPDATES" ]] && updates_section=$(printf '\n\n**Updated packages:**\n%s' "$GIT_UPDATES")
+          body=$(cat <<END
+          ![GitHub release (by tag)](https://img.shields.io/github/downloads/$GITHUB_REPOSITORY/$short_date/total?label=Downloads)
+
+          **Workflow run**: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID$updates_section
+          END
+          )
+          id=$(curl $CURL_RETRIES -s -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" -X POST https://api.github.com/repos/$GITHUB_REPOSITORY/releases -d @- <<END | jq -r '.id'
+          {
+            "tag_name": "$short_date",
+            "name": "$short_date",
+            "body": "$(echo ${body//$'\n'/'\n'})"
+          }
+          END
+          )
+          for file in release/*.7z; do curl $CURL_RETRIES -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" -X POST -H "Content-Type: $(file -b --mime-type $file)" https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$id/assets?name=$(basename $file) --data-binary @$file; done
+
+      - name: Pruning tags
+        continue-on-error: true
+        run: |
+          # Keep latest 30 tags/releases
+          git fetch --tags
+          tag_list=($(git tag | sort -r))
+          old=${tag_list[@]:30}
+          for tag in ${old[@]}; do
+            id=$(curl $CURL_RETRIES -s -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" -X GET https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$tag | jq -r '.id')
+            curl $CURL_RETRIES -s -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" -X DELETE https://api.github.com/repos/$GITHUB_REPOSITORY/releases/$id
+            git tag -d $tag
+          done
+          git push --tags --prune https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY
+
+      - name: Delete releases cache
+        if: ${{ github.event.inputs.github_release == 'false' || steps.upload_packages_gh.outcome == 'success' }}
+        run: |
+          curl $CURL_RETRIES -s -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" -o /dev/null -X DELETE https://api.github.com/repos/$GITHUB_REPOSITORY/actions/caches?key=$release_i686_key
+          curl $CURL_RETRIES -s -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" -o /dev/null -X DELETE https://api.github.com/repos/$GITHUB_REPOSITORY/actions/caches?key=$release_x86_64_key
+          curl $CURL_RETRIES -s -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" -o /dev/null -X DELETE https://api.github.com/repos/$GITHUB_REPOSITORY/actions/caches?key=$release_x86_64_v3_key
+          curl $CURL_RETRIES -s -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" -o /dev/null -X DELETE https://api.github.com/repos/$GITHUB_REPOSITORY/actions/caches?key=$release_aarch64_key
+
+  # call_workflow:
+  #   name: Run mpv_gcc
+  #   runs-on: ubuntu-latest
+  #   needs: build_mpv
+  #   env:
+  #     GH_TOKEN: ${{ github.token }}
+  #     GH_COMMAND: ${{ github.event.inputs.command }}
+  #   steps:
+  #     - name: Run mpv_gcc.yml
+  #       run: |
+  #         curl -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" -X POST https://api.github.com/repos/$GITHUB_REPOSITORY/actions/workflows/mpv_gcc.yml/dispatches -d @- <<EOF
+  #         {
+  #           "ref": "${{ github.ref_name }}",
+  #           "inputs": {
+  #             "sourceforge": "false",
+  #             "github_release": "true",
+  #             "mpv_tarball": "false",
+  #             "command": "$GH_COMMAND"
+  #           }
+  #         }
+  #         EOF
+
+  # gist:
+  #   name: Gist
+  #   runs-on: ubuntu-latest
+  #   needs: build_mpv
+  #   if: ${{ always() }}
+  #   env:
+  #     GH_TOKEN: ${{ secrets.GIST_TOKEN }}
+  #     RUN_ID: ${{ github.run_id }}
+  #   steps:
+  #     - name: Setup git credentials
+  #       run: |
+  #         git config --global user.name "github-actions"
+  #         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+  #     - name: Upload job logs to gist
+  #       run: |
+  #         url=$(curl -su shinchiro:$GH_TOKEN -X GET -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/shinchiro/mpv-winbuild-cmake/actions/runs/$RUN_ID/jobs | jq -r '.jobs[0] | .url')
+  #         curl -sLu shinchiro:$GH_TOKEN -X GET -H "Accept: application/vnd.github.v3+json" $url/logs -o mpv_log
+  #         git clone --depth 1 https://shinchiro:$GH_TOKEN@gist.github.com/90308c6632c9010d03b325c9ca6a4b6f job_log
+  #         cp -f mpv_log job_log/mpv_log
+  #         git -C job_log add .
+  #         git -C job_log commit --amend --no-edit
+  #         git -C job_log push -f https://shinchiro:$GH_TOKEN@gist.github.com/90308c6632c9010d03b325c9ca6a4b6f

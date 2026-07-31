@@ -9,13 +9,10 @@ ExternalProject_Add(opus-tools
     SOURCE_DIR ${SOURCE_LOCATION}
     GIT_CLONE_FLAGS "--filter=tree:0"
     UPDATE_COMMAND ""
-    CONFIGURE_COMMAND ${EXEC} cd <SOURCE_DIR> && git clean -dfx && unset CC CXX && NOCONFIGURE=1 ./autogen.sh && CONF=1 ./configure
-        CC=${TARGET_ARCH}-gcc
-        CXX=${TARGET_ARCH}-g++
+    CONFIGURE_COMMAND ${EXEC} <SOURCE_DIR>/autogen.sh && CONF=1 <SOURCE_DIR>/configure
         --host=${TARGET_ARCH}
         --prefix=${MINGW_INSTALL_PREFIX}
         --disable-stack-protector
-        --disable-dependency-tracking
         CFLAGS='-D_FORTIFY_SOURCE=0'
         LDFLAGS='-static'
         FLAC_CFLAGS='-DFLAC__NO_DLL'

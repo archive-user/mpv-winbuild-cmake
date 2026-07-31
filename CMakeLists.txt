@@ -108,12 +108,9 @@ endif()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/meson_cross.txt.in ${CMAKE_CURRENT_BINARY_DIR}/meson_cross.txt @ONLY)
 set(MESON_CROSS ${CMAKE_CURRENT_BINARY_DIR}/meson_cross.txt)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cargo_config.in ${RUSTUP_LOCATION}/.cargo/config @ONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/exec.in ${CMAKE_CURRENT_BINARY_DIR}/exec
-    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-    @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/exec.in ${CMAKE_CURRENT_BINARY_DIR}/exec @ONLY)
 set(EXEC ${CMAKE_CURRENT_BINARY_DIR}/exec)
 set(MAKE ${EXEC} make -j${MAKEJOBS})
-set(MAKE_INSTALL ${EXEC} make -j1)
 
 if(TARGET_CPU STREQUAL "x86_64")
     execute_process(

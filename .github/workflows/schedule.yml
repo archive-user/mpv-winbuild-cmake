@@ -1,0 +1,16 @@
+name: Release by schedule
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  triggger_release_workflow:
+    runs-on: ubuntu-slim
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GITHUB_REPOSITORY: ${{ github.repository }}
+    steps:
+      - name: Run workflow
+        run: gh workflow run mpv_clang.yml -R $GITHUB_REPOSITORY -f github_release=true

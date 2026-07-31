@@ -12,9 +12,7 @@ ExternalProject_Add(megasdk
     GIT_CLONE_FLAGS "--filter=tree:0"
     UPDATE_COMMAND ""
     PATCH_COMMAND ${EXEC} git am --3way ${CMAKE_CURRENT_SOURCE_DIR}/megasdk-*.patch
-    CONFIGURE_COMMAND ${EXEC} cd <SOURCE_DIR> && git clean -dfx && unset CC CXX && NOCONFIGURE=1 ./autogen.sh && CONF=1 ./configure
-        CC=${TARGET_ARCH}-gcc
-        CXX=${TARGET_ARCH}-g++
+    CONFIGURE_COMMAND ${EXEC} <SOURCE_DIR>/autogen.sh && CONF=1 <SOURCE_DIR>/configure
         --host=${TARGET_ARCH}
         --prefix=${MINGW_INSTALL_PREFIX}
         --enable-static
@@ -29,7 +27,6 @@ ExternalProject_Add(megasdk
         --with-readline=${MINGW_INSTALL_PREFIX}
         --with-libuv=${MINGW_INSTALL_PREFIX}
         --with-sodium=${MINGW_INSTALL_PREFIX}
-        --disable-dependency-tracking
     BUILD_COMMAND ${MAKE}
     INSTALL_COMMAND ${MAKE} install-strip
     BUILD_IN_SOURCE 1

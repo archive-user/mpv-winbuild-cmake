@@ -23,9 +23,6 @@ function(cleanup _name _last_step)
         set(COMMAND_FORCE_UPDATE COMMAND bash -c "git -C <SOURCE_DIR> am --abort 2> /dev/null || true"
                                  COMMAND ${stamp_dir}/reset_head.sh
                                  COMMAND bash -c "git -C <SOURCE_DIR> restore .")
-        set(COMMAND_POSTREMOVE COMMAND bash -c "git -C <SOURCE_DIR> am --abort 2> /dev/null || true"
-                               COMMAND bash -c "git -C <SOURCE_DIR> restore . 2> /dev/null || true"
-                               COMMAND ${EXEC} rm -f <LOG_DIR>/${_name}-configure <LOG_DIR>/${_name}-build)
     endif()
 
     # <STAMP_DIR> doesn't resolve into full path, so <LOG_DIR> is used instead since its same folder.
@@ -52,7 +49,7 @@ function(cleanup _name _last_step)
     ExternalProject_Add_Step(${_name} postremovebuild
         DEPENDEES ${_last_step}
         COMMAND ${EXEC} ${remove_cmd}
-        ${COMMAND_POSTREMOVE}
+        ${COMMAND_FORCE_UPDATE}
         LOG 1
         COMMENT "Deleting build directory of ${_name} package after install"
     )
@@ -98,12 +95,8 @@ function(force_rebuild_git _name)
 file(WRITE ${stamp_dir}/reset_head.sh
 "#!/bin/bash
 set -e
-if [[ ! -d \"${source_dir}\" ]]; then
-    echo \"Source directory ${source_dir} does not exist, skipping force-update for ${_name}\"
-    exit 0
-fi
 if [[ ! -f \"${stamp_dir}/${_name}-patch\"  || \"${stamp_dir}/${_name}-download\" -nt \"${stamp_dir}/${_name}-patch\" || ! -f \"${stamp_dir}/HEAD\" || \"$(cat ${stamp_dir}/HEAD)\" != \"$(git -C ${source_dir} rev-parse @{u})\" ]]; then
-    git -C ${source_dir} reset --hard ${reset} -q || { git -C ${source_dir} reset --hard -q; find \"${stamp_dir}\" -type f ! -iname '*.cmake' -size 0c -delete; echo \"Removing ${_name} stamp files (pinned hash not found).\"; git -C ${source_dir} rev-parse HEAD > ${stamp_dir}/HEAD; }
+    git -C ${source_dir} reset --hard ${reset} -q
     if [[ -z \"${git_reset}\" ]]; then
         find \"${stamp_dir}\" -type f  ! -iname '*.cmake' -size 0c -delete
         echo \"Removing ${_name} stamp files.\"
@@ -115,24 +108,14 @@ fi")
 file(CHMOD ${stamp_dir}/reset_head.sh 
 PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
-file(WRITE ${stamp_dir}/force_update.sh
-"#!/bin/bash
-if [ -d \"${source_dir}\" ]; then
-    cd \"${source_dir}\"
-    git am --abort 2>/dev/null || true
-    git fetch --no-recurse-submodules || true
-    \"${stamp_dir}/reset_head.sh\"
-else
-    echo 'Source directory for ${_name} does not exist, skipping force-update'
-fi")
-file(CHMOD ${stamp_dir}/force_update.sh
-PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-
     ExternalProject_Add_Step(${_name} force-update
         ALWAYS TRUE
         EXCLUDE_FROM_MAIN TRUE
         INDEPENDENT TRUE
-        COMMAND ${stamp_dir}/force_update.sh
+        WORKING_DIRECTORY <SOURCE_DIR>
+        COMMAND bash -c "git am --abort 2> /dev/null || true"
+        COMMAND bash -c "git fetch --filter=tree:0 --no-recurse-submodules || true"
+        COMMAND ${stamp_dir}/reset_head.sh
     )
     ExternalProject_Add_StepTargets(${_name} force-update)
 

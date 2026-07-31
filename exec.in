@@ -8,8 +8,6 @@ export CARGO_HOME="@RUSTUP_LOCATION@/.cargo"
 export LD_PRELOAD="@MALLOC@"
 export CCACHE_DIR="@MINGW_INSTALL_PREFIX@/ccache"
 export LLVM_PROFILE_FILE="/dev/null"
-export CC="@TARGET_ARCH@-gcc"
-export CXX="@TARGET_ARCH@-g++"
 # disable profraw output by default, ensure that only clang and lld can explicitly enable profraw output by wrapper
 
 eval $*

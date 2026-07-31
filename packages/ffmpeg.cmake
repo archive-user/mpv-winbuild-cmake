@@ -27,12 +27,12 @@ ExternalProject_Add(ffmpeg
         speex
         vorbis
         x264
+        ${ffmpeg_x265}
         xvidcore
         libxml2
         libvpl
         libopenmpt
         libjxl
-        shaderc
         libplacebo
         libzvbi
         libaribcaption
@@ -43,6 +43,7 @@ ExternalProject_Add(ffmpeg
         ${ffmpeg_uavs3d}
         ${ffmpeg_davs2}
         rubberband
+        libva
         openal-soft
     GIT_REPOSITORY https://github.com/FFmpeg/FFmpeg.git
     SOURCE_DIR ${SOURCE_LOCATION}
@@ -82,6 +83,7 @@ ExternalProject_Add(ffmpeg
         --enable-libvpx
         --enable-libwebp
         --enable-libx264
+        --enable-libx265
         --enable-libaom
         --enable-libsvtav1
         --enable-libdav1d
@@ -106,14 +108,15 @@ ExternalProject_Add(ffmpeg
         --disable-doc
         --disable-ffplay
         --disable-ffprobe
+        --enable-vaapi
         --disable-vdpau
         --disable-videotoolbox
         --disable-decoder=libaom_av1
         ${ffmpeg_lto}
         --extra-cflags='-Wno-error=int-conversion'
-        "--extra-libs='${ffmpeg_extra_libs}'" # -lstdc++ / -lc++ needs by libjxl
+        "--extra-libs='${ffmpeg_extra_libs}'" # -lstdc++ / -lc++ needs by libjxl and shaderc
     BUILD_COMMAND ${MAKE}
-    INSTALL_COMMAND ${MAKE_INSTALL} install
+    INSTALL_COMMAND ${MAKE} install
     LOG_DOWNLOAD 1 LOG_UPDATE 1 LOG_CONFIGURE 1 LOG_BUILD 1 LOG_INSTALL 1
 )
 

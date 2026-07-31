@@ -4,21 +4,16 @@ ExternalProject_Add(libsixel
     GIT_CLONE_FLAGS "--sparse --filter=tree:0"
     GIT_CLONE_POST_COMMAND "sparse-checkout set --no-cone /* !images"
     UPDATE_COMMAND ""
-    GIT_RESET af12e5bc6f3f69ad83479da85ddb371420da9b17
-    CONFIGURE_COMMAND ${EXEC} cd <SOURCE_DIR> && git clean -dfx && unset CC CXX && NOCONFIGURE=1 ./autogen.sh && CONF=1 ./configure
-        CC=${TARGET_ARCH}-gcc
-        CXX=${TARGET_ARCH}-g++
+    CONFIGURE_COMMAND ${EXEC} <SOURCE_DIR>/autogen.sh && CONF=1 <SOURCE_DIR>/configure
         --host=${TARGET_ARCH}
         --prefix=${MINGW_INSTALL_PREFIX}
         --disable-img2sixel
         --disable-sixel2png
         --disable-python
         --disable-shared
-        --disable-tests
         --enable-static
-        --disable-dependency-tracking
     BUILD_COMMAND ${MAKE}
-    INSTALL_COMMAND ${MAKE_INSTALL} install
+    INSTALL_COMMAND ${MAKE} install
     BUILD_IN_SOURCE 1
     LOG_DOWNLOAD 1 LOG_UPDATE 1 LOG_CONFIGURE 1 LOG_BUILD 1 LOG_INSTALL 1
 )
