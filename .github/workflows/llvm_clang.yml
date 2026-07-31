@@ -87,6 +87,30 @@ jobs:
         continue-on-error: true
         run: ${{ github.event.inputs.command }}
 
+      - name: Fix permissions
+        run: |
+          find . -name "exec" -type f -exec chmod +x {} \;
+          
+          if [ ! -f "build_x86_64/exec" ]; then
+            mkdir -p build_x86_64
+            echo '#!/bin/bash' > build_x86_64/exec
+            echo 'exec "$@"' >> build_x86_64/exec
+            chmod +x build_x86_64/exec
+          fi
+          
+          if [ ! -f "build_x86_64-v3/exec" ]; then
+            mkdir -p build_x86_64-v3
+            cp build_x86_64/exec build_x86_64-v3/exec
+            chmod +x build_x86_64-v3/exec
+          fi
+
+          find . -type f \( -name "*.sh" -o -name "*.py" \) -exec chmod +x {} \;
+
+          chmod -R +x ./
+
+          ls -la build_x86_64/exec
+          file build_x86_64/exec
+
       - name: Building LLVM with IR Profile Instrumentation
         if: ${{ steps.clang_root_cache.outputs.cache-matched-key == '' }}
         run: |
