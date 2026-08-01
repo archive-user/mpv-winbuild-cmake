@@ -83,7 +83,7 @@ ExternalProject_Add(ffmpeg
         --enable-libvpx
         --enable-libwebp
         --enable-libx264
-        --enable-libx265
+        --disable-libx265
         --enable-libaom
         --enable-libsvtav1
         --enable-libdav1d
