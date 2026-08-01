@@ -90,6 +90,16 @@ jobs:
       - name: Upgrading meson
         run: pip install --upgrade --break-system-packages meson
 
+      - name: Install MinGW toolchain
+        run: |
+          apt-get update
+          apt-get install -y gcc-mingw-w64-i686 g++-mingw-w64-i686 \
+                            gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 \
+                            mingw-w64-i686-dev mingw-w64-x86-64-dev
+          if [[ "${{ matrix.bit }}" == "aarch64" ]]; then
+            apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          fi
+
       - name: Configuring CMake & Downloading source
         run: |
           cmake -DTARGET_ARCH=${{ env.arch }}-w64-mingw32 -DCOMPILER_TOOLCHAIN=clang ${{ env.x86_64_v3_ARCH }} -DCMAKE_INSTALL_PREFIX=$PWD/clang_root -DMINGW_INSTALL_PREFIX=$PWD/build_$BIT/$BIT-w64-mingw32 -DSINGLE_SOURCE_LOCATION=$PWD/src_packages -DRUSTUP_LOCATION=$PWD/clang_root/install_rustup -DENABLE_CCACHE=ON -DCLANG_PACKAGES_LTO=ON -G Ninja --fresh -B build_$BIT -S $PWD
