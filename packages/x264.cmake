@@ -14,10 +14,9 @@ ExternalProject_Add(x264
         --disable-ffms
         --disable-gpac
         --disable-lsmash
-    BUILD_COMMAND ${EXEC} LTO=0 make -j${MAKEJOBS}
+        --extra-cflags="-m64 -mstackrealign -Wno-error"
+        --extra-ldflags="-Wl,--no-undefined"
+    BUILD_COMMAND ${EXEC} LTO=1 make -j${MAKEJOBS}
     INSTALL_COMMAND ${MAKE} install
     LOG_DOWNLOAD 1 LOG_UPDATE 1 LOG_CONFIGURE 1 LOG_BUILD 1 LOG_INSTALL 1
 )
-
-force_rebuild_git(x264)
-cleanup(x264 install)
