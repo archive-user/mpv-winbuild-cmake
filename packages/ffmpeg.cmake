@@ -1,3 +1,9 @@
+if(${TARGET_CPU} MATCHES "x86_64_v3")
+    set(FFMPEG_EXTRA_CFLAGS "-march=x86-64-v3 -mtune=generic")
+else()
+    set(FFMPEG_EXTRA_CFLAGS "")
+endif()
+
 ExternalProject_Add(ffmpeg
     DEPENDS
         amf-headers
@@ -113,7 +119,7 @@ ExternalProject_Add(ffmpeg
         --disable-videotoolbox
         --disable-decoder=libaom_av1
         ${ffmpeg_lto}
-        --extra-cflags='-Wno-error=int-conversion'
+        --extra-cflags='-Wno-error=int-conversion ${FFMPEG_EXTRA_CFLAGS}'
         "--extra-libs='${ffmpeg_extra_libs}'" # -lstdc++ / -lc++ needs by libjxl and shaderc
     BUILD_COMMAND ${MAKE}
     INSTALL_COMMAND ${MAKE} install
