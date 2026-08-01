@@ -269,49 +269,11 @@ jobs:
           du -ah release/*
 
       - name: Uploading packages to Github release
-        id: upload_packages_gh
+        uses: softprops/action-gh-release@v1
         if: ${{ github.event.inputs.github_release == 'true' && github.event.inputs.mpv_tarball == 'false' }}
-        continue-on-error: true
-        env:
-          GIT_UPDATES: ${{ needs.build_mpv.outputs.git_updates }}
-        run: |
-          short_date=$(date "+%Y%m%d")
-          updates_section=""
-          [[ -n "$GIT_UPDATES" ]] && updates_section=$(printf '\n\n**Updated packages:**\n%s' "$GIT_UPDATES")
-          body=$(cat <<END
-          ![GitHub release (by tag)](https://img.shields.io/github/downloads/$GITHUB_REPOSITORY/$short_date/total?label=Downloads)
-
-          **Workflow run**: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID$updates_section
-          END
-          )
-          id=$(curl $CURL_RETRIES -s -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" -X POST https://api.github.com/repos/$GITHUB_REPOSITORY/releases -d @- <<END | jq -r '.id'
-          {
-            "tag_name": "$short_date",
-            "name": "$short_date",
-            "body": "$(echo ${body//$'\n'/'\n'})"
-          }
-          END
-          )
-          for file in release/*.7z; do curl $CURL_RETRIES -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" -X POST -H "Content-Type: $(file -b --mime-type $file)" https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$id/assets?name=$(basename $file) --data-binary @$file; done
-
-      - name: Pruning tags
-        continue-on-error: true
-        run: |
-          # Keep latest 30 tags/releases
-          git fetch --tags
-          tag_list=($(git tag | sort -r))
-          old=${tag_list[@]:30}
-          for tag in ${old[@]}; do
-            id=$(curl $CURL_RETRIES -s -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" -X GET https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$tag | jq -r '.id')
-            curl $CURL_RETRIES -s -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" -X DELETE https://api.github.com/repos/$GITHUB_REPOSITORY/releases/$id
-            git tag -d $tag
-          done
-          git push --tags --prune https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY
-
-      - name: Delete releases cache
-        if: ${{ github.event.inputs.github_release == 'false' || steps.upload_packages_gh.outcome == 'success' }}
-        run: |
-          curl $CURL_RETRIES -s -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" -o /dev/null -X DELETE https://api.github.com/repos/$GITHUB_REPOSITORY/actions/caches?key=$release_i686_key
-          curl $CURL_RETRIES -s -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" -o /dev/null -X DELETE https://api.github.com/repos/$GITHUB_REPOSITORY/actions/caches?key=$release_x86_64_key
-          curl $CURL_RETRIES -s -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" -o /dev/null -X DELETE https://api.github.com/repos/$GITHUB_REPOSITORY/actions/caches?key=$release_x86_64_v3_key
-          curl $CURL_RETRIES -s -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" -o /dev/null -X DELETE https://api.github.com/repos/$GITHUB_REPOSITORY/actions/caches?key=$release_aarch64_key
+        with:
+          draft: true
+          prerelease: false
+          tag_name: "vnext"
+          files: |
+            release/*
