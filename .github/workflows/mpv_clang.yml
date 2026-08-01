@@ -90,15 +90,11 @@ jobs:
       - name: Upgrading meson
         run: pip install --upgrade --break-system-packages meson
 
-      - name: Install MinGW toolchain
-        run: |
-          apt-get update
-          apt-get install -y gcc-mingw-w64-i686 g++-mingw-w64-i686 \
-                            gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 \
-                            mingw-w64-i686-dev mingw-w64-x86-64-dev
-          if [[ "${{ matrix.bit }}" == "aarch64" ]]; then
-            apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-          fi
+      - name: Setup MinGW-w64
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: ${{ matrix.bit == 'i686' && 'i686' || 'x64' }}
+          version: 12.2.0
 
       - name: Configuring CMake & Downloading source
         run: |
