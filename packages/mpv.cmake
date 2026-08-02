@@ -6,19 +6,27 @@ ExternalProject_Add(mpv
         lcms2
         libarchive
         libass
+        libdvdnav
+        libdvdread
+        libiconv
         libjpeg
         libpng
+        luajit
+        rubberband
         uchardet
-        shaderc
-        spirv-cross
+        openal-soft
+        mujs
         vulkan
         shaderc
         libplacebo
         spirv-cross
+        vapoursynth
+        libsdl2
+        subrandr
+        libsixel
     GIT_REPOSITORY https://github.com/mpv-player/mpv.git
-    GIT_TAG ad59ff1b4a7479e15cb01a96f64ada4fb4df4951
     SOURCE_DIR ${SOURCE_LOCATION}
-    PATCH_COMMAND ${EXEC} git apply ${CMAKE_CURRENT_SOURCE_DIR}/mpv-*.patch
+    GIT_CLONE_FLAGS "--filter=tree:0"
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ${EXEC} CONF=1 meson setup <BINARY_DIR> <SOURCE_DIR>
         --prefix=${MINGW_INSTALL_PREFIX}
@@ -26,22 +34,28 @@ ExternalProject_Add(mpv
         --cross-file=${MESON_CROSS}
         --default-library=shared
         --prefer-static
-        -Dgpl=false
-        -Ddebug=false
-        -Db_ndebug=false
+        -Ddebug=true
+        -Db_ndebug=true
         -Doptimization=3
         -Db_lto=true
         ${mpv_lto_mode}
         -Dlibmpv=true
         -Dpdf-build=enabled
-        -Dlua=disabled
-        -Djavascript=disabled
+        -Dlua=enabled
+        -Djavascript=enabled
+        -Dsdl2-gamepad=enabled
+        -Dlibarchive=enabled
+        -Dlibbluray=enabled
+        -Ddvdnav=enabled
         -Duchardet=enabled
+        -Drubberband=enabled
         -Dlcms2=enabled
-        -Dopenal=disabled
+        -Dopenal=enabled
         -Dspirv-cross=enabled
-        -Dvulkan=disabled
-        -Dvapoursynth=disabled
+        -Dvulkan=enabled
+        -Dvapoursynth=enabled
+        -Dsubrandr=enabled
+        -Dsixel=enabled
         ${mpv_gl}
         -Dc_args='-Wno-error=int-conversion'
     BUILD_COMMAND ${EXEC} LTO_JOB=1 PDB=1 ninja -C <BINARY_DIR>
@@ -68,7 +82,6 @@ ExternalProject_Add_Step(mpv copy-binary
     COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/include/mpv/stream_cb.h    ${CMAKE_CURRENT_BINARY_DIR}/mpv-dev/include/mpv/stream_cb.h
     COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/include/mpv/render.h       ${CMAKE_CURRENT_BINARY_DIR}/mpv-dev/include/mpv/render.h
     COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/include/mpv/render_gl.h    ${CMAKE_CURRENT_BINARY_DIR}/mpv-dev/include/mpv/render_gl.h
-    COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/include/mpv/render_dxgi.h  ${CMAKE_CURRENT_BINARY_DIR}/mpv-dev/include/mpv/render_dxgi.h
     COMMENT "Copying mpv binaries and manual"
 )
 
